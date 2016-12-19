@@ -1,0 +1,49 @@
+dist: trusty
+sudo: required
+
+env:
+  global:
+    - NUM_THREADS=4
+    - WITH_CMAKE=true
+
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+cache:
+  apt: true
+  directories:
+    - ~/protobuf3
+
+before_install:
+  - pushd .
+  - git clone https://github.com/BVLC/caffe.git caffe
+  - cd caffe/
+  - source ./scripts/travis/defaults.sh
+
+install:
+  - sudo -E ./scripts/travis/install-deps.sh
+  - ./scripts/travis/setup-venv.sh ~/venv
+  - source ~/venv/bin/activate
+  - ./scripts/travis/install-python-deps.sh
+
+before_script:
+  - ./scripts/travis/configure.sh
+  - ./scripts/travis/build.sh
+  - cd build && make install
+  - export PATH="$PWD/tools:$PWD/lib:$PATH"
+
+script:
+  - popd
+  - mkdir build && cd build
+  - cmake ..
+  - make
+  - cd ..
+
+after_success:
+  - cd src/xor/
+  - ./generate.sh
+  - ./train.sh
+  - ./classify.sh
